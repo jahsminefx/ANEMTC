@@ -1,0 +1,213 @@
+// Prisma Schema for Aninta Natural & Energy Medicine Therapy Center
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  role         String     @default("SUPERADMIN") // SUPERADMIN, ADMIN, EDITOR
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
+
+  @@map("admin_users")
+}
+
+model Service {
+  id               String   @id @default(uuid())
+  name             String
+  slug             String   @unique
+  shortDescription String
+  description      String
+  image            String?
+  isPublished      Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("services")
+}
+
+model PartnerCompany {
+  id              String    @id @default(uuid())
+  name            String
+  slug            String    @unique
+  logo            String?
+  description     String
+  websiteUrl      String
+  registrationUrl String?
+  productUrl      String?
+  isFeatured      Boolean   @default(false)
+  isPublished     Boolean   @default(true)
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  products        Product[]
+
+  @@map("partner_companies")
+}
+
+model WellnessCategory {
+  id          String            @id @default(uuid())
+  name        String
+  slug        String            @unique
+  description String?
+  image       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  products    ProductCategory[]
+
+  @@map("wellness_categories")
+}
+
+model Product {
+  id               String            @id @default(uuid())
+  name             String
+  slug             String            @unique
+  shortDescription String
+  description      String
+  partnerId        String
+  partner          PartnerCompany    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  externalUrl      String?
+  isFeatured       Boolean           @default(false)
+  isPublished      Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  images           ProductImage[]
+  categories       ProductCategory[]
+
+  @@index([partnerId])
+  @@index([isFeatured])
+  @@index([isPublished])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String?
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+  product    Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   WellnessCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@map("product_categories")
+}
+
+model BlogCategory {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  posts       BlogPost[]
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id        String        @id @default(uuid())
+  name      String
+  slug      String        @unique
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  posts     BlogPostTag[]
+
+  @@map("blog_tags")
+}
+
+model BlogPost {
+  id             String        @id @default(uuid())
+  title          String
+  slug           String        @unique
+  excerpt        String
+  content        String
+  featuredImage  String?
+  author         String        @default("Aninta Wellness Team")
+  categoryId     String?
+  category       BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  seoTitle       String?
+  seoDescription String?
+  status         String        @default("DRAFT") // DRAFT, PUBLISHED, SCHEDULED
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  tags           BlogPostTag[]
+
+  @@index([status])
+  @@index([slug])
+  @@map("blog_posts")
+}
+
+model BlogPostTag {
+  postId String
+  tagId  String
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("blog_post_tags")
+}
+
+model NewsletterSubscriber {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  firstName   String
+  status      String   @default("ACTIVE") // ACTIVE, UNSUBSCRIBED
+  ipHash      String?
+  brevoSynced Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("newsletter_subscribers")
+}
+
+model SiteSettings {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model AuditLog {
+  id         String     @id @default(uuid())
+  adminId    String?
+  admin      AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  action     String
+  targetType String
+  targetId   String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime   @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@map("audit_logs")
+}

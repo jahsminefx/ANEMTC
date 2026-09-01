@@ -1,0 +1,21 @@
+{
+  "name": "aninta-therapy-center",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready website and CMS for Aninta Natural & Energy Medicine Therapy Center",
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build && npm --prefix server run build",
+    "db:migrate": "npm --prefix server run db:migrate",
+    "db:seed": "npm --prefix server run db:seed",
+    "db:push": "npm --prefix server run db:push",
+    "test": "npm --prefix server run test",
+    "postinstall": "cd server && npx prisma generate || true"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
